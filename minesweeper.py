@@ -4,6 +4,8 @@ import tkMessageBox
 import random
 import sys
 
+#EVENTUALLY CHANGE TO CLASS
+
 
 # class Example(Frame, object):
   
@@ -37,6 +39,7 @@ import sys
 array = [[0 for x in range(8)] for y in range(8)]
 flagBool = False
 firstMove = True
+counter = 0
 
 def callback(x, y):
     loc = str(x)
@@ -50,10 +53,12 @@ def callback(x, y):
     global firstMove
     if firstMove:
     	firstMove = False
+    	startTimer(timer)
     	createBoard(x,y)
     	checkBombs()
     	for x in range(0, len(array)):
     		print(array[x])
+    	move(x,y,pos)
 
     global flagBool
     if flagBool:
@@ -70,20 +75,29 @@ def callback(x, y):
     #helper function for moves
     # checkMove(x,y,pos)
 
-def checkMove(x, y, pos):
+def move(x, y, pos):
 	if array[x][y] == '#':
 		# found bomb, game over display message box
 		tkMessageBox.showerror("Gameover", "Oh no, you selected a bomb! Try again")
 	elif array[x][y] == 0:
 		# need to open up all neighbors that are 0
-		buttons[pos].configure(text='0')
-		buttons[pos].configure(state='disabled')
-		checkNeighbors(x,y, pos)
+		buttons[pos].configure(text='0', state='disabled')
+		checkNeighbors(x,y)
 	else:
-		buttons[pos].configure(text=str(array[x][y]))
-		buttons[pos].configure(state='disabled')
+		buttons[pos].configure(text=str(array[x][y]), state='disabled')
 
-
+def checkNeighbors(x, y):
+	print 'IN CHECK NEIGHBORS'
+	locs = getNeighbors(x,y)
+	for loc in locs:
+		# get position of button
+		pos = helper(x,y)
+		if str(buttons[pos]['state']) == 'normal':
+			# button has yet to be explored
+			buttons[pos].configure(state='disabled', text=str(loc.get('val')))
+			if loc.get('val') == 0:
+				checkNeighbors(loc.get('x'), loc.get('y'))
+			
 
 def helper(x, y):
 	pos = x*8
@@ -154,7 +168,14 @@ def setFlag():
 	else:
 		flag.configure(text='flag')
 
-
+def startTimer(timer):
+	counter = 0
+	def count():
+		global counter
+		counter += 1
+		timer.configure(text=str(counter))
+		timer.after(1000, count)
+	count()
 
 # ******* Create grid ******** #
 
