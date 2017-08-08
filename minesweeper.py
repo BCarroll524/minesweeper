@@ -50,30 +50,27 @@ def callback(x, y):
     loc += str(pos)
     print(loc)
 
-    global firstMove
-    if firstMove:
-    	firstMove = False
-    	startTimer(timer)
-    	createBoard(x,y)
-    	checkBombs()
-    	for x in range(0, len(array)):
-    		print(array[x])
-    	move(x,y,pos)
-
     global flagBool
+    global firstMove
+    # check if flagging is turned on
     if flagBool:
     	if str(buttons[pos]['text']) != '?':
     		buttons[pos].configure(text='?')
     	else:
     		buttons[pos].configure(text='')
     elif str(buttons[pos]['text']) != '?':
-    	getNeighbors(x,y)
-    
-    # find button in list
-    # through helper
+    	# check to see if first move, else play normally
+	    if firstMove:
+	    	firstMove = False
+	    	startTimer(timer)
+	    	createBoard(x,y)
+	    	checkBombs()
+	    	for a in range(0, len(array)):
+	    		print(array[a])
+	    	move(x,y,pos)
+	    else:
+	    	move(x,y,pos)
 
-    #helper function for moves
-    # checkMove(x,y,pos)
 
 def move(x, y, pos):
 	if array[x][y] == '#':
@@ -81,23 +78,35 @@ def move(x, y, pos):
 		tkMessageBox.showerror("Gameover", "Oh no, you selected a bomb! Try again")
 	elif array[x][y] == 0:
 		# need to open up all neighbors that are 0
-		buttons[pos].configure(text='0', state='disabled')
+		buttons[pos].configure(text=str(array[x][y]), state='disabled')
 		checkNeighbors(x,y)
 	else:
 		buttons[pos].configure(text=str(array[x][y]), state='disabled')
 
-def checkNeighbors(x, y):
-	print 'IN CHECK NEIGHBORS'
+
+def checkNeighbors(x,y):
 	locs = getNeighbors(x,y)
 	for loc in locs:
+		print(loc)
 		# get position of button
-		pos = helper(x,y)
-		if str(buttons[pos]['state']) == 'normal':
-			# button has yet to be explored
-			buttons[pos].configure(state='disabled', text=str(loc.get('val')))
-			if loc.get('val') == 0:
+		pos = 'checking: ('
+		pos += str(loc.get('x'))
+		pos += ','
+		pos += str(loc.get('y'))
+		pos += ')'
+		print(pos)
+		index = helper(loc.get('x'), loc.get('y'))
+		print (buttons[index]['state'])
+		if str(buttons[index]['state']) == 'normal':
+			print 'state was normal'
+			if loc.get('val') != 0:
+				print 'Value WAS NOT zero'
+				buttons[index].configure(text=str(loc.get('val')), state='disabled')
+			else:
+				print 'Value WAS zero'
+				buttons[index].configure(text=str(loc.get('val')), state='disabled')
 				checkNeighbors(loc.get('x'), loc.get('y'))
-			
+
 
 def helper(x, y):
 	pos = x*8
@@ -161,6 +170,7 @@ def checkBombs():
 				array[x][y] = count
 
 def setFlag():
+	print 'set flag'
 	global flagBool
 	flagBool = not flagBool
 	if flagBool:
@@ -186,6 +196,8 @@ def startTimer(timer):
 # for x in range(0,8):
 # 	for y in range(0,8):
 # 		checkBombs(x,y)
+def test():
+	print 'IT WORKED'
 
 root = Tk()
 buttons = []
