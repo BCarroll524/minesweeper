@@ -1,4 +1,4 @@
-from Tkinter import Tk, W, E
+from Tkinter import *
 from ttk import Frame, Button, Entry, Style, Label
 import tkMessageBox
 import random
@@ -39,25 +39,25 @@ import sys
 array = [[0 for x in range(8)] for y in range(8)]
 flagBool = False
 firstMove = True
+buttons = []
+bombs = 10
 counter = 0
+endTimer = False
 
 def callback(x, y):
-    loc = str(x)
-    loc += ','
-    loc += str(y)
-    pos = helper(x, y)
-    loc += ' - '
-    loc += str(pos)
-    print(loc)
 
-    global flagBool
-    global firstMove
+    global flagBool, firstMove, bombs
+    pos = helper(x, y)
     # check if flagging is turned on
     if flagBool:
     	if str(buttons[pos]['text']) != '?':
     		buttons[pos].configure(text='?')
+    		bombs -= 1
+    		bombsLeft.configure(text=str(bombs))
     	else:
     		buttons[pos].configure(text='')
+    		bombs += 1
+    		bombsLeft.configure(text=str(bombs))
     elif str(buttons[pos]['text']) != '?':
     	# check to see if first move, else play normally
 	    if firstMove:
@@ -70,12 +70,34 @@ def callback(x, y):
 	    	move(x,y,pos)
 	    else:
 	    	move(x,y,pos)
+	    gameOver()
 
+def gameOver():
+	count = 0
+	global endTimer
+	for button in buttons:
+		if str(button['state']) == 'normal':
+			count += 1
+	if count == 10:
+		tkMessageBox.showinfo('Congratulations!!', 'You have uncovered all of the mines!')
+		endTimer = True
+		return True
+	return False
+
+def endGame():
+	global endTimer
+	endTimer = True
+	for x in range(0, len(array)):
+		for y in range(0, len(array[x])):
+			if array[x][y] == '#':
+				buttons[helper(x,y)].configure(text='#', state='disabled')
 
 def move(x, y, pos):
 	if array[x][y] == '#':
 		# found bomb, game over display message box
+		endGame()
 		tkMessageBox.showerror("Gameover", "Oh no, you selected a bomb! Try again")
+		newGame()
 	elif array[x][y] == 0:
 		# need to open up all neighbors that are 0
 		buttons[pos].configure(text=str(array[x][y]), state='disabled')
@@ -187,28 +209,35 @@ def startTimer(timer):
 		timer.after(1000, count)
 	count()
 
-# ******* Create grid ******** #
+def newGame():
+	print 'new game'
+	global array, buttons, firstMove, counter
+	counter = 0
+	array = [[0 for x in range(8)] for y in range(8)]
+	firstMove = True
+	for button in buttons:
+		button.configure(text='', state='normal')
 
-# createBoard()
-
-# checkBombs()
-
-# for x in range(0,8):
-# 	for y in range(0,8):
-# 		checkBombs(x,y)
-def test():
-	print 'IT WORKED'
 
 root = Tk()
-buttons = []
+
+menubar = Menu(root)
+menu = Menu(menubar, tearoff=0)
+menu.add_command(label="New Game", command=newGame)
+menu.add_separator()
+menu.add_command(label="Quit", command=root.quit)
+menubar.add_cascade(label="File", menu=menu)
+
+root.config(menu=menubar)
+
 for x in range(0,8):
 	for y in range(0,8):
 		button = Button(root, width=1, command=lambda x=x, y=y: callback(x,y) )
 		button.grid(row=x, column=y)
 		buttons.append(button)
 
-newGame = Button(root, width=5, text='new')
-newGame.grid(row=8, column=0, columnspan=2)
+bombsLeft = Button(root, width=5, text=str(bombs))
+bombsLeft.grid(row=8, column=0, columnspan=2)
 timer = Label(root, foreground='red', text='timer')
 timer.grid(row=8, column=3, columnspan=2)
 flag = Button(root, width=5, text='flag', command=lambda : setFlag())
@@ -228,64 +257,3 @@ root.mainloop()
 # if __name__ == '__main__':
 #     main()  
 
-# def checkNeighbors(x, y, pos):
-
-# 	topLeft = helper(x-1,y-1)
-# 	top = helper(x-1,y)
-# 	topRight = helper(x-1,y+1)
-# 	left = helper(x,y-1)
-# 	right = helper(x,y+1)
-# 	botLeft = helper(x+1,y-1)
-
-
-
-# 	bot = helper(x+1,y)
-# 	botRight = helper(x+1,y+1)
-	
-# 	if array[x-1][y-1] == 0 and str(buttons[topLeft]['state']) == 'normal':
-# 		buttons[topLeft].configure(text='0', state='disabled')
-# 		checkNeighbors(x-1, y-1, topLeft)
-# 	# elif str(buttons[topLeft]['state']) == 'normal':
-# 	# 	buttons[topLeft].configure(text=str(array[x-1][y-1]), state='disabled')
-
-# 	if array[x-1][y] == 0 and str(buttons[top]['state']) == 'normal':
-# 		buttons[top].configure(text='0', state='disabled')
-# 		checkNeighbors(x-1, y, top)
-# 	# elif str(buttons[top]['state']) == 'normal':
-# 	# 	buttons[top].configure(text=str(array[x-1][y]), state='disabled')
-
-# 	if array[x-1][y+1] == 0 and str(buttons[topRight]['state']) == 'normal':
-# 		buttons[topRight].configure(text='0', state='disabled')
-# 		checkNeighbors(x-1, y+1, topRight)
-# 	# elif str(buttons[topRight]['state']) == 'normal':
-# 	# 	buttons[topRight].configure(text=str(array[x-1][y+1]), state='disabled')
-
-# 	if array[x][y-1] == 0 and str(buttons[left]['state']) == 'normal':
-# 		buttons[left].configure(text='0', state='disabled')
-# 		checkNeighbors(x, y-1, left)
-# 	# elif str(buttons[left]['state']) == 'normal':
-# 	# 	buttons[left].configure(text=str(array[x][y-1]), state='disabled')
-
-# 	if array[x][y+1] == 0 and str(buttons[right]['state']) == 'normal':
-# 		buttons[right].configure(text='0', state='disabled')
-# 		checkNeighbors(x, y+1, right)
-# 	# elif str(buttons[right]['state']) == 'normal':
-# 	# 	buttons[right].configure(text=str(array[x][y+1]), state='disabled')
-
-# 	if array[x+1][y-1] == 0 and str(buttons[botLeft]['state']) == 'normal':
-# 		buttons[botLeft].configure(text='0', state='disabled')
-# 		checkNeighbors(x+1, y-1, botLeft)
-# 	# elif str(buttons[botLeft]['state']) == 'normal':
-# 	# 	buttons[botLeft].configure(text=str(array[x+1][y-1]), state='disabled')
-
-# 	if array[x+1][y] == 0 and str(buttons[bot]['state']) == 'normal':
-# 		buttons[bot].configure(text='0', state='disabled')
-# 		checkNeighbors(x+1, y, bot)
-# 	# elif str(buttons[bot]['state']) == 'normal':
-# 	# 	buttons[bot].configure(text=str(array[x+1][y]), state='disabled')
-
-# 	if array[x+1][y+1] == 0 and str(buttons[botRight]['state']) == 'normal':
-# 		buttons[botRight].configure(text='0', state='disabled')
-# 		checkNeighbors(x+1, y+1, botRight)
-# 	# elif str(buttons[botRight]['state']) == 'normal':
-# 	# 	buttons[botRight].configure(text=str(array[x+1][y+1]), state='disabled')
