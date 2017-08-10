@@ -3,38 +3,16 @@ from ttk import Frame, Button, Entry, Style, Label
 import tkMessageBox
 import random
 import sys
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import func
+from database import Base, Highscores
 
-#EVENTUALLY CHANGE TO CLASS
+engine = create_engine('sqlite:///highscores.db')
+Base.metadata.bind = engine
 
-
-# class Example(Frame, object):
-  
-#     def __init__(self, master):
-#         super(Example, self).__init__(master)   
-         
-#         self.initUI()
-
-        
-#     def initUI(self):
-      
-#         self.master.title("Minesweeper")
-        
-#         Style().configure("TButton", padding=(0, 0, 0, 0), 
-#             font='serif 10')
-
-#         width = 8
-#         height = 8
-#         bomb = 10
-#         for x in range(0, width):
-#         	for y in range(0, height):
-#         		button = Button(self, width=1, command=callback)
-#         		button.grid(row=x, column=y)
-
-#         array = [[0 for x in range(width)] for y in range(height)]
-#         for x in range(0, len(array)):
-#         	print(array[x])
-        
-#         self.pack()
+DBSession = sessionmaker(bind = engine)
+session = DBSession()
 
 array = [[0 for x in range(8)] for y in range(8)]
 flagBool = False
@@ -43,6 +21,7 @@ buttons = []
 bombs = 10
 counter = 0
 endTimer = False
+name = ''
 
 def callback(x, y):
 
@@ -72,6 +51,14 @@ def callback(x, y):
 	    	move(x,y,pos)
 	    gameOver()
 
+def saveScore(entry):
+	global counter
+	score = Highscores(name=str(entry.get()), score=counter)
+	session.add(score)
+	session.commit()
+	showHighscores()
+
+
 def gameOver():
 	count = 0
 	global endTimer
@@ -79,10 +66,20 @@ def gameOver():
 		if str(button['state']) == 'normal':
 			count += 1
 	if count == 10:
-		tkMessageBox.showinfo('Congratulations!!', 'You have uncovered all of the mines!')
+
+		popup = Toplevel()
+		popup.title('Congratulations!')
+		msg = Message(popup, text='You won! Enter your name:')
+		msg.pack()
+		entry = Entry(popup)
+		entry.pack()
+		button = Button(popup, text='Submit', command=lambda e=entry: saveScore(e))
+		button.pack()
+		popup.geometry('%dx%d+%d+%d' % (150, 100, 600, 300))
 		endTimer = True
 		return True
 	return False
+
 
 def endGame():
 	global endTimer
@@ -105,27 +102,45 @@ def move(x, y, pos):
 	else:
 		buttons[pos].configure(text=str(array[x][y]), state='disabled')
 
+def showHighscores():
+	# get top 5 scores
+	arr = session.query(Highscores).all()
+
+	for i in range(len(arr)):
+	    for j in range(i, len(arr)):
+	        if(arr[i].score > arr[j].score):
+	            arr[i], arr[j] = arr[j], arr[i]
+
+
+	top = Toplevel()
+	top.title('Highscores')
+	msg = Message(top, text='Top 5 Leaderboard:')
+	msg.pack
+	count = 1
+	for i in range(5):
+		text = str(count)
+		text += '. '
+		text += str(arr[i].name)
+		text += ': '
+		text += str(arr[i].score)
+		label = Label(top, text=text)
+		label.pack()
+		count += 1
+
+
+	button = Button(top, text='Dismiss', command=top.destroy)
+	button.pack()
+	top.geometry('%dx%d+%d+%d' % (200, 200, 600, 300))
+
 
 def checkNeighbors(x,y):
 	locs = getNeighbors(x,y)
 	for loc in locs:
-		print(loc)
-		# get position of button
-		pos = 'checking: ('
-		pos += str(loc.get('x'))
-		pos += ','
-		pos += str(loc.get('y'))
-		pos += ')'
-		print(pos)
 		index = helper(loc.get('x'), loc.get('y'))
-		print (buttons[index]['state'])
 		if str(buttons[index]['state']) == 'normal':
-			print 'state was normal'
 			if loc.get('val') != 0:
-				print 'Value WAS NOT zero'
 				buttons[index].configure(text=str(loc.get('val')), state='disabled')
 			else:
-				print 'Value WAS zero'
 				buttons[index].configure(text=str(loc.get('val')), state='disabled')
 				checkNeighbors(loc.get('x'), loc.get('y'))
 
@@ -245,6 +260,7 @@ flag.grid(row=8, column=6, columnspan=2)
 
 
 root.mainloop()
+
 
 
 # def main():
